@@ -14,6 +14,7 @@ class SettingsViewModel @Inject constructor(
 
     val recordingMode: StateFlow<RecordingMode> = settingsRepository.recordingMode
     val userPhone: StateFlow<String> = settingsRepository.userPhone
+    val twilioPhone: StateFlow<String> = settingsRepository.twilioPhone
 
     fun setRecordingMode(mode: RecordingMode) {
         settingsRepository.setRecordingMode(mode)
@@ -21,5 +22,9 @@ class SettingsViewModel @Inject constructor(
 
     fun setUserPhone(phone: String) {
         settingsRepository.setUserPhone(phone)
+    }
+
+    fun setTwilioPhone(phone: String) {
+        settingsRepository.setTwilioPhone(phone)
     }
 }

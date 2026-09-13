@@ -94,7 +94,6 @@ fun KeypadScreen(
     viewModel: KeypadViewModel
 ) {
     val phoneNumber by viewModel.phoneNumber.collectAsStateWithLifecycle()
-    val isRecordingLoading by viewModel.isRecordingLoading.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -165,7 +164,7 @@ fun KeypadScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Action row: Call, Record & Call, Delete
+                // Action row: Call, Delete
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -173,11 +172,13 @@ fun KeypadScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Spacer(modifier = Modifier.weight(0.2f))
+
                     // Call Button
                     Button(
                         onClick = {
                             if (phoneNumber.isNotBlank()) {
-                                CallUtils.launchCall(context, phoneNumber)
+                                viewModel.startCall(phoneNumber)
                             }
                         },
                         modifier = Modifier.weight(1f).height(64.dp),
@@ -190,28 +191,11 @@ fun KeypadScreen(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // Record & Call Button
-                    Button(
-                        onClick = {
-                            if (phoneNumber.isNotBlank()) {
-                                viewModel.startRecordAndCall(phoneNumber)
-                            }
-                        },
-                        modifier = Modifier.weight(1.3f).height(64.dp),
-                        enabled = !isRecordingLoading,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
-                    ) {
-                        Icon(Icons.Rounded.Mic, contentDescription = "Record and call")
-                        Spacer(Modifier.width(8.dp))
-                        Text("Record & Call", style = MaterialTheme.typography.titleMedium)
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     // Delete Button
                     if (phoneNumber.isNotEmpty()) {
                         Box(
                             modifier = Modifier
+                                .weight(0.2f)
                                 .size(56.dp)
                                 .clip(CircleShape)
                                 .combinedClickable(
@@ -227,40 +211,7 @@ fun KeypadScreen(
                             )
                         }
                     } else {
-                        Spacer(modifier = Modifier.size(56.dp))
-                    }
-                }
-            }
-
-            if (isRecordingLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Card(
-                        modifier = Modifier.padding(32.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Black.copy(alpha = 0.8f)
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            CircularProgressIndicator(color = Color(0xFF2E7D32))
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                text = "Twilio is merging the call...",
-                                color = Color.White,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = "You'll receive a call shortly",
-                                color = Color.Gray,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
+                        Spacer(modifier = Modifier.weight(0.2f))
                     }
                 }
             }

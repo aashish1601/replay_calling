@@ -113,6 +113,21 @@ class CallStateManager @Inject constructor() {
         removeCall(targetCall.id)
     }
 
+    fun mergeCalls() {
+        val calls = _activeCalls.value
+        if (calls.size >= 2) {
+            val call1 = calls[0].telecomCall
+            val call2 = calls[1].telecomCall
+            if (call1 != null && call2 != null) {
+                try {
+                    call1.conference(call2)
+                } catch (e: Exception) {
+                    // Ignore or log error if carrier doesn't support merge
+                }
+            }
+        }
+    }
+
     fun toggleMute() {
         setMuted(!_isMuted.value)
     }

@@ -29,9 +29,6 @@ class KeypadViewModel @Inject constructor(
     private val _phoneNumber = MutableStateFlow("")
     val phoneNumber: StateFlow<String> = _phoneNumber.asStateFlow()
 
-    private val _isRecordingLoading = MutableStateFlow(false)
-    val isRecordingLoading: StateFlow<Boolean> = _isRecordingLoading.asStateFlow()
-
     private val _uiEvent = MutableSharedFlow<KeypadUiEvent>()
     val uiEvent: SharedFlow<KeypadUiEvent> = _uiEvent.asSharedFlow()
 
@@ -49,37 +46,9 @@ class KeypadViewModel @Inject constructor(
         _phoneNumber.value = ""
     }
 
-    fun startRecordAndCall(phoneNumber: String) {
-        val userPhone = settingsRepository.userPhone.value
-        if (userPhone.isBlank()) {
-            viewModelScope.launch {
-                _uiEvent.emit(KeypadUiEvent.ShowToast("Please set your phone number in Settings first."))
-            }
-            return
-        }
-
-        _isRecordingLoading.value = true
+    fun startCall(phoneNumber: String) {
         viewModelScope.launch {
-            try {
-                val request = StartRecordingRequest(
-                    userPhone = userPhone,
-                    contactPhone = phoneNumber,
-                    userId = "user_123" // Replace with real auth if you have it
-                )
-                val response = replayApi.startRecording(request)
-
-                if (response.isSuccessful && response.body()?.success == true) {
-                    _uiEvent.emit(KeypadUiEvent.ShowToast("Recording started! Twilio is merging the call..."))
-                } else {
-                    _uiEvent.emit(KeypadUiEvent.ShowToast("Twilio unavailable. Using device fallback."))
-                    _uiEvent.emit(KeypadUiEvent.LaunchNativeCall(phoneNumber))
-                }
-            } catch (e: Exception) {
-                _uiEvent.emit(KeypadUiEvent.ShowToast("Twilio error: ${e.message}. Using device fallback."))
-                _uiEvent.emit(KeypadUiEvent.LaunchNativeCall(phoneNumber))
-            } finally {
-                _isRecordingLoading.value = false
-            }
+            _uiEvent.emit(KeypadUiEvent.LaunchNativeCall(phoneNumber))
         }
     }
 }

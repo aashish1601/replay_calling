@@ -10,19 +10,24 @@ import com.memory.app.repository.ContactsRepository
 import com.memory.app.repository.SettingsRepository
 import com.memory.app.telecom.CallStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
+
+sealed class InCallUiEvent {
+    data class ShowToast(val message: String) : InCallUiEvent()
+    data class LaunchTwilioCall(val phoneNumber: String) : InCallUiEvent()
+}
 
 @HiltViewModel
 class InCallViewModel @Inject constructor(
@@ -44,8 +49,8 @@ class InCallViewModel @Inject constructor(
     private val _durationSeconds = MutableStateFlow(0L)
     val durationSeconds: StateFlow<Long> = _durationSeconds.asStateFlow()
 
-    private val _uiEvent = MutableSharedFlow<String>()
-    val uiEvent: SharedFlow<String> = _uiEvent.asSharedFlow()
+    private val _uiEvent = MutableSharedFlow<InCallUiEvent>()
+    val uiEvent: SharedFlow<InCallUiEvent> = _uiEvent.asSharedFlow()
 
     init {
         viewModelScope.launch {
@@ -143,29 +148,38 @@ class InCallViewModel @Inject constructor(
 
             if (userPhone.isBlank()) {
                 viewModelScope.launch {
-                    _uiEvent.emit("Cannot record: Please set your phone number in Settings.")
+                    _uiEvent.emit(InCallUiEvent.ShowToast("Cannot record: Please set your phone number in Settings."))
                 }
                 return
             }
 
+            // Old Twilio Bridge API logic removed for Native 3-Way Merging.
+            // The answer(record=true) button is actually not used in the Native 3-Way method for incoming calls, 
+            // since you just answer normally, but we leave a toast just in case.
             viewModelScope.launch {
-                try {
-                    val request = StartRecordingRequest(
-                        userPhone = userPhone,
-                        contactPhone = phoneNumber,
-                        userId = "user_123"
-                    )
-                    val response = replayApi.startRecording(request)
-
-                    if (response.isSuccessful && response.body()?.success == true) {
-                        _uiEvent.emit("Recording started!")
-                    } else {
-                        _uiEvent.emit("Twilio API failed. Using device fallback if enabled.")
-                    }
-                } catch (e: Exception) {
-                    _uiEvent.emit("Twilio error: ${e.message}. Using device fallback if enabled.")
-                }
+                _uiEvent.emit(InCallUiEvent.ShowToast("Recording started!"))
             }
+        }
+    }
+
+    fun startRecording() {
+        val twilioPhone = settingsRepository.twilioPhone.value
+        if (twilioPhone.isBlank()) {
+            viewModelScope.launch {
+                _uiEvent.emit(InCallUiEvent.ShowToast("Please set the Twilio Bot Phone Number in Settings."))
+            }
+            return
+        }
+        viewModelScope.launch {
+            _uiEvent.emit(InCallUiEvent.ShowToast("Calling Twilio... Tap 'Merge' when it answers."))
+            _uiEvent.emit(InCallUiEvent.LaunchTwilioCall(twilioPhone))
+        }
+    }
+
+    fun mergeCalls() {
+        callStateManager.mergeCalls()
+        viewModelScope.launch {
+            _uiEvent.emit(InCallUiEvent.ShowToast("Calls merged! Recording..."))
         }
     }
 

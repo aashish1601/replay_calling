@@ -102,13 +102,22 @@ fun InCallScreen(
         onCloseKeypad = viewModel::closeKeypad,
         onDtmfKeyPress = viewModel::onDtmfKeyPress,
         onDtmfKeyRelease = viewModel::onDtmfKeyRelease,
+        onStartRecording = viewModel::startRecording,
+        onMergeCalls = viewModel::mergeCalls,
         modifier = modifier
     )
 
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
-            android.widget.Toast.makeText(context, event, android.widget.Toast.LENGTH_LONG).show()
+            when (event) {
+                is InCallUiEvent.ShowToast -> {
+                    android.widget.Toast.makeText(context, event.message, android.widget.Toast.LENGTH_LONG).show()
+                }
+                is InCallUiEvent.LaunchTwilioCall -> {
+                    com.memory.app.util.CallUtils.launchCall(context, event.phoneNumber)
+                }
+            }
         }
     }
 }
@@ -131,6 +140,8 @@ fun InCallScreenContent(
     onCloseKeypad: () -> Unit,
     onDtmfKeyPress: (Char) -> Unit,
     onDtmfKeyRelease: () -> Unit,
+    onStartRecording: () -> Unit,
+    onMergeCalls: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val topPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -167,6 +178,8 @@ fun InCallScreenContent(
                     onToggleMute = onToggleMute,
                     onToggleSpeaker = onToggleSpeaker,
                     onToggleKeypad = onToggleKeypad,
+                    onStartRecording = onStartRecording,
+                    onMergeCalls = onMergeCalls,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -359,6 +372,8 @@ fun OngoingCallContent(
     onToggleMute: () -> Unit,
     onToggleSpeaker: () -> Unit,
     onToggleKeypad: () -> Unit,
+    onStartRecording: () -> Unit,
+    onMergeCalls: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -452,6 +467,33 @@ fun OngoingCallContent(
                     isActive = isKeypadOpen,
                     onClick = onToggleKeypad,
                     contentDescription = "Show keypad overlay"
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Second Control Row: Record, Merge
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CallControlButton(
+                    icon = androidx.compose.material.icons.Icons.Rounded.Mic,
+                    label = "Record",
+                    isActive = false,
+                    onClick = onStartRecording,
+                    contentDescription = "Start Recording"
+                )
+
+                CallControlButton(
+                    icon = androidx.compose.material.icons.Icons.Rounded.Call, // Could use a better icon for merge
+                    label = "Merge",
+                    isActive = false,
+                    onClick = onMergeCalls,
+                    contentDescription = "Merge Calls"
                 )
             }
 
@@ -715,7 +757,9 @@ fun OngoingCallPreview() {
             onHangUp = {},
             onToggleMute = {},
             onToggleSpeaker = {},
-            onToggleKeypad = {}
+            onToggleKeypad = {},
+            onStartRecording = {},
+            onMergeCalls = {}
         )
     }
 }

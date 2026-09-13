@@ -113,6 +113,28 @@ app.post('/calls/status', (req, res) => {
   res.sendStatus(200);
 });
 
+/**
+ * 4. Record Incoming Conference
+ * In the Native 3-Way Conference method, when the app dials Twilio, Twilio answers and starts recording.
+ */
+app.post('/twiml/record', (req, res) => {
+  console.log(`Received incoming call to Twilio bot. Starting conference recording.`);
+
+  const VoiceResponse = twilio.twiml.VoiceResponse;
+  const response = new VoiceResponse();
+
+  // Play a quick beep and start recording everything it hears until the call drops
+  response.play({ digits: 'w' }); // Wait 0.5 seconds
+  response.say('Recording started.');
+  response.record({
+    timeout: 0, // Don't timeout on silence
+    playBeep: true
+  });
+
+  res.type('text/xml');
+  res.send(response.toString());
+});
+
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });

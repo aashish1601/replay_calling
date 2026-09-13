@@ -43,6 +43,7 @@ fun SettingsScreen(
     val capability by recordingsViewModel.capability.collectAsState()
     val recordingMode by settingsViewModel.recordingMode.collectAsState()
     val userPhone by settingsViewModel.userPhone.collectAsState()
+    val twilioPhone by settingsViewModel.twilioPhone.collectAsState()
     val context = LocalContext.current
     var isDefaultDialer by remember { mutableStateOf(false) }
 
@@ -279,6 +280,17 @@ fun SettingsScreen(
                         onValueChange = { settingsViewModel.setUserPhone(it) },
                         label = { Text("Your Phone Number") },
                         placeholder = { Text("+1 234 567 8900") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedTextField(
+                        value = twilioPhone,
+                        onValueChange = { settingsViewModel.setTwilioPhone(it) },
+                        label = { Text("Twilio Bot Phone Number") },
+                        placeholder = { Text("+1 618 469 0394") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )

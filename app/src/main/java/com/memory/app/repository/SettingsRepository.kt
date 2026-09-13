@@ -26,6 +26,9 @@ open class SettingsRepository @Inject constructor(
     private val _userPhone = MutableStateFlow(getSavedUserPhone())
     open val userPhone: StateFlow<String> = _userPhone.asStateFlow()
 
+    private val _twilioPhone = MutableStateFlow(getSavedTwilioPhone())
+    open val twilioPhone: StateFlow<String> = _twilioPhone.asStateFlow()
+
     open fun setRecordingMode(mode: RecordingMode) {
         prefs?.edit()?.putString(KEY_RECORDING_MODE, mode.name)?.apply()
         _recordingMode.value = mode
@@ -34,6 +37,11 @@ open class SettingsRepository @Inject constructor(
     open fun setUserPhone(phone: String) {
         prefs?.edit()?.putString(KEY_USER_PHONE, phone)?.apply()
         _userPhone.value = phone
+    }
+
+    open fun setTwilioPhone(phone: String) {
+        prefs?.edit()?.putString(KEY_TWILIO_PHONE, phone)?.apply()
+        _twilioPhone.value = phone
     }
 
     private fun getSavedRecordingMode(): RecordingMode {
@@ -49,8 +57,13 @@ open class SettingsRepository @Inject constructor(
         return prefs?.getString(KEY_USER_PHONE, "") ?: ""
     }
 
+    private fun getSavedTwilioPhone(): String {
+        return prefs?.getString(KEY_TWILIO_PHONE, "") ?: ""
+    }
+
     companion object {
         private const val KEY_RECORDING_MODE = "recording_mode"
         private const val KEY_USER_PHONE = "user_phone"
+        private const val KEY_TWILIO_PHONE = "twilio_phone"
     }
 }
