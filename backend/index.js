@@ -81,7 +81,7 @@ app.post('/twiml/bridge', (req, res) => {
   // Dial the contact and start recording as soon as they answer
   const dial = response.dial({
     record: 'record-from-answer',
-    callerId: userPhone || twilioPhoneNumber // The caller ID shown to the contact will be your personal number
+    callerId: twilioPhoneNumber // Reverted to Twilio number because personal number is unverified
   });
   dial.number(contactPhone);
 
