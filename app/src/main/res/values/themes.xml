@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.Replay_calling" parent="Theme.MaterialComponents.Light" />
+</resources>
