@@ -86,7 +86,7 @@ app.post('/twiml/bridge', (req, res) => {
   // Dial the contact and start recording as soon as they answer
   const dial = response.dial({
     record: 'record-from-answer',
-    callerId: userPhone || twilioPhoneNumber 
+    callerId: twilioPhoneNumber // Telecom networks block local spoofing from international gateways. Must use Twilio number.
   });
   dial.number(contactPhone);
 
