@@ -154,7 +154,7 @@ fun MainScreen() {
                             }
                         },
                         onDiagnosticsClick = { backStack.add(Screen.RecordingDiagnostics) },
-                        viewModel = recordingsViewModel
+                        recordingsViewModel = recordingsViewModel
                     )
                 }
                 entry<Screen.CallDetail> { route ->

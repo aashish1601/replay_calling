@@ -4,11 +4,20 @@ import android.content.ContextWrapper
 import com.memory.app.model.CallDirection
 import com.memory.app.model.CallSession
 import com.memory.app.model.CallState
+import com.memory.app.model.RecordingMode
+import com.memory.app.network.ReplayApi
+import com.memory.app.network.StartRecordingRequest
+import com.memory.app.network.StartRecordingResponse
+import com.memory.app.network.StopRecordingRequest
+import com.memory.app.network.StopRecordingResponse
 import com.memory.app.repository.Contact
 import com.memory.app.repository.ContactsRepository
+import com.memory.app.repository.SettingsRepository
 import com.memory.app.telecom.CallStateManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -18,6 +27,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import retrofit2.Response
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class InCallViewModelTest {
@@ -25,6 +35,8 @@ class InCallViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var callStateManager: CallStateManager
     private lateinit var fakeContactsRepository: FakeContactsRepository
+    private lateinit var fakeSettingsRepository: FakeSettingsRepository
+    private lateinit var fakeReplayApi: FakeReplayApi
     private lateinit var viewModel: InCallViewModel
 
     private class FakeContactsRepository : ContactsRepository(
@@ -34,12 +46,38 @@ class InCallViewModelTest {
         override suspend fun getContacts(): List<Contact> = contactsToReturn
     }
 
+    private class FakeSettingsRepository : SettingsRepository(
+        context = ContextWrapper(null)
+    ) {
+        val modeFlow = MutableStateFlow(RecordingMode.NATIVE)
+        val phoneFlow = MutableStateFlow("+15550000")
+        override val recordingMode: StateFlow<RecordingMode> = modeFlow
+        override val userPhone: StateFlow<String> = phoneFlow
+    }
+
+    private class FakeReplayApi : ReplayApi {
+        override suspend fun startRecording(request: StartRecordingRequest): Response<StartRecordingResponse> {
+            return Response.success(StartRecordingResponse(true, "sid_1", "Ok"))
+        }
+
+        override suspend fun stopRecording(request: StopRecordingRequest): Response<StopRecordingResponse> {
+            return Response.success(StopRecordingResponse(true, "Ok"))
+        }
+    }
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         callStateManager = CallStateManager()
         fakeContactsRepository = FakeContactsRepository()
-        viewModel = InCallViewModel(callStateManager, fakeContactsRepository)
+        fakeSettingsRepository = FakeSettingsRepository()
+        fakeReplayApi = FakeReplayApi()
+        viewModel = InCallViewModel(
+            callStateManager,
+            fakeContactsRepository,
+            fakeSettingsRepository,
+            fakeReplayApi
+        )
     }
 
     @After
@@ -121,7 +159,7 @@ class InCallViewModelTest {
         )
         callStateManager.addOrUpdateCall(session)
 
-        viewModel.answerCall()
+        viewModel.answerCall(record = false)
         assertEquals(CallState.ACTIVE, callStateManager.currentCall.value?.state)
 
         viewModel.hangUpCall()

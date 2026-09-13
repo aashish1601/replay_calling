@@ -40,8 +40,8 @@ app.post('/calls/start', async (req, res) => {
     // If not set, it will attempt to use the host header, which works best in production environments.
     const baseUrl = process.env.BASE_URL || `https://${req.headers.host}`;
     
-    // We pass the contactPhone as a query parameter to the bridge webhook
-    const bridgeUrl = `${baseUrl}/twiml/bridge?contactPhone=${encodeURIComponent(contactPhone)}`;
+    // We pass the contactPhone and userPhone as query parameters to the bridge webhook
+    const bridgeUrl = `${baseUrl}/twiml/bridge?contactPhone=${encodeURIComponent(contactPhone)}&userPhone=${encodeURIComponent(userPhone)}`;
 
     // 1. Tell Twilio to call the App User first.
     const call = await client.calls.create({
@@ -71,6 +71,7 @@ app.post('/calls/start', async (req, res) => {
  */
 app.post('/twiml/bridge', (req, res) => {
   const contactPhone = req.query.contactPhone;
+  const userPhone = req.query.userPhone;
 
   console.log(`User answered. Generating TwiML to dial Contact (${contactPhone}) and record.`);
 
@@ -80,7 +81,7 @@ app.post('/twiml/bridge', (req, res) => {
   // Dial the contact and start recording as soon as they answer
   const dial = response.dial({
     record: 'record-from-answer',
-    callerId: twilioPhoneNumber // The caller ID shown to the contact will be your Twilio number
+    callerId: userPhone || twilioPhoneNumber // The caller ID shown to the contact will be your personal number
   });
   dial.number(contactPhone);
 

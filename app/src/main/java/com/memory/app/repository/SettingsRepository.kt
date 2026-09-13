@@ -11,29 +11,33 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SettingsRepository @Inject constructor(
+open class SettingsRepository @Inject constructor(
     @ApplicationContext context: Context
 ) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("memory_settings", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences? = try {
+        context.getSharedPreferences("memory_settings", Context.MODE_PRIVATE)
+    } catch (e: Exception) {
+        null
+    }
     
     private val _recordingMode = MutableStateFlow(getSavedRecordingMode())
-    val recordingMode: StateFlow<RecordingMode> = _recordingMode.asStateFlow()
+    open val recordingMode: StateFlow<RecordingMode> = _recordingMode.asStateFlow()
 
     private val _userPhone = MutableStateFlow(getSavedUserPhone())
-    val userPhone: StateFlow<String> = _userPhone.asStateFlow()
+    open val userPhone: StateFlow<String> = _userPhone.asStateFlow()
 
-    fun setRecordingMode(mode: RecordingMode) {
-        prefs.edit().putString(KEY_RECORDING_MODE, mode.name).apply()
+    open fun setRecordingMode(mode: RecordingMode) {
+        prefs?.edit()?.putString(KEY_RECORDING_MODE, mode.name)?.apply()
         _recordingMode.value = mode
     }
 
-    fun setUserPhone(phone: String) {
-        prefs.edit().putString(KEY_USER_PHONE, phone).apply()
+    open fun setUserPhone(phone: String) {
+        prefs?.edit()?.putString(KEY_USER_PHONE, phone)?.apply()
         _userPhone.value = phone
     }
 
     private fun getSavedRecordingMode(): RecordingMode {
-        val saved = prefs.getString(KEY_RECORDING_MODE, RecordingMode.NATIVE.name)
+        val saved = prefs?.getString(KEY_RECORDING_MODE, RecordingMode.NATIVE.name)
         return try {
             RecordingMode.valueOf(saved ?: RecordingMode.NATIVE.name)
         } catch (e: Exception) {
@@ -42,7 +46,7 @@ class SettingsRepository @Inject constructor(
     }
 
     private fun getSavedUserPhone(): String {
-        return prefs.getString(KEY_USER_PHONE, "") ?: ""
+        return prefs?.getString(KEY_USER_PHONE, "") ?: ""
     }
 
     companion object {

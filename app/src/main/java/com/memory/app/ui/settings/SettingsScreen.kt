@@ -1,5 +1,6 @@
 package com.memory.app.ui.settings
 
+import android.Manifest
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent

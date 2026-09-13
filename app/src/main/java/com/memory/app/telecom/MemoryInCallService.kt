@@ -4,7 +4,7 @@ import android.os.Build
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
-import android.telecom.CallAudioState
+import android.util.Log
 import com.memory.app.model.CallDirection
 import com.memory.app.model.CallSession
 import com.memory.app.model.CallState
@@ -113,13 +113,13 @@ class MemoryInCallService : InCallService() {
             
             // Delegate disconnected handling to the recording engine
             val disconnectedEntity = com.memory.app.db.CallEntity(
-                id = disconnectedSession.callId.toLongOrNull() ?: System.currentTimeMillis(),
+                id = disconnectedSession.id.toLongOrNull() ?: System.currentTimeMillis(),
                 phoneNumber = disconnectedSession.phoneNumber,
                 contactName = disconnectedSession.contactName,
                 direction = disconnectedSession.direction.name,
-                startedAt = disconnectedSession.startTime,
+                startedAt = disconnectedSession.startedAt,
                 endedAt = System.currentTimeMillis(),
-                duration = System.currentTimeMillis() - disconnectedSession.startTime
+                duration = System.currentTimeMillis() - disconnectedSession.startedAt
             )
             recordingEngine.onCallDisconnected(disconnectedEntity)
         }

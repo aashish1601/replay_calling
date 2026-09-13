@@ -47,183 +47,6 @@ val keypadButtons = listOf(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun KeypadScreen(
-    viewModel: KeypadViewModel
-) {
-    val phoneNumber by viewModel.phoneNumber.collectAsStateWithLifecycle()
-    val isRecordingLoading by viewModel.isRecordingLoading.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        viewModel.uiEvent.collect { event ->
-            when (event) {
-                is KeypadUiEvent.ShowToast -> {
-                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
-                }
-                is KeypadUiEvent.LaunchNativeCall -> {
-                    CallUtils.launchCall(context, event.phoneNumber)
-                }
-            }
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Display area
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = phoneNumber,
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        // Keypad grid
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            for (row in 0..3) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    for (col in 0..2) {
-                        val index = row * 3 + col
-                        val item = keypadButtons[index]
-                        KeypadButton(
-                            digit = item.digit,
-                            subtext = item.letters,
-                            onClick = { viewModel.appendDigit(item.digit) },
-                            onLongClick = if (item.digit == "0") {
-                                { viewModel.appendDigit("+") }
-                            } else null
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Action row: Call, Record & Call, Delete
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Call Button
-                Button(
-                    onClick = {
-                        if (phoneNumber.isNotBlank()) {
-                            CallUtils.launchCall(context, phoneNumber)
-                        }
-                    },
-                    modifier = Modifier.weight(1f).height(64.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Icon(Icons.Rounded.Call, contentDescription = "Place call")
-                    Spacer(Modifier.width(8.dp))
-                    Text("Call", style = MaterialTheme.typography.titleMedium)
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Record & Call Button
-                Button(
-                    onClick = {
-                        if (phoneNumber.isNotBlank()) {
-                            viewModel.startRecordAndCall(phoneNumber)
-                        }
-                    },
-                    modifier = Modifier.weight(1.3f).height(64.dp),
-                    enabled = !isRecordingLoading,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
-                ) {
-                    Icon(Icons.Rounded.Mic, contentDescription = "Record and call")
-                    Spacer(Modifier.width(8.dp))
-                    Text("Record & Call", style = MaterialTheme.typography.titleMedium)
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Delete Button
-                if (phoneNumber.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .combinedClickable(
-                                onClick = { viewModel.deleteLastDigit() },
-                                onLongClick = { viewModel.clear() }
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Backspace,
-                            contentDescription = "Delete digit",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                } else {
-                    Spacer(modifier = Modifier.size(56.dp))
-                }
-            }
-        }
-
-        if (isRecordingLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Card(
-                    modifier = Modifier.padding(32.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Black.copy(alpha = 0.8f)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF2E7D32))
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = "Twilio is merging the call...",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "You'll receive a call shortly",
-                            color = Color.Gray,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
 fun KeypadButton(
     digit: String,
     subtext: String,
@@ -260,6 +83,186 @@ fun KeypadButton(
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun KeypadScreen(
+    viewModel: KeypadViewModel
+) {
+    val phoneNumber by viewModel.phoneNumber.collectAsStateWithLifecycle()
+    val isRecordingLoading by viewModel.isRecordingLoading.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is KeypadUiEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                }
+
+                is KeypadUiEvent.LaunchNativeCall -> {
+                    CallUtils.launchCall(context, event.phoneNumber)
+                }
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Display area
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = phoneNumber,
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Keypad grid
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                for (row in 0..3) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        for (col in 0..2) {
+                            val index = row * 3 + col
+                            val item = keypadButtons[index]
+                            val onLongClickAction: (() -> Unit)? = if (item.digit == "0") {
+                                { viewModel.appendDigit("+") }
+                            } else null
+                            KeypadButton(
+                                digit = item.digit,
+                                subtext = item.letters,
+                                onClick = { viewModel.appendDigit(item.digit) },
+                                onLongClick = onLongClickAction
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Action row: Call, Record & Call, Delete
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Call Button
+                    Button(
+                        onClick = {
+                            if (phoneNumber.isNotBlank()) {
+                                CallUtils.launchCall(context, phoneNumber)
+                            }
+                        },
+                        modifier = Modifier.weight(1f).height(64.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Rounded.Call, contentDescription = "Place call")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Call", style = MaterialTheme.typography.titleMedium)
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Record & Call Button
+                    Button(
+                        onClick = {
+                            if (phoneNumber.isNotBlank()) {
+                                viewModel.startRecordAndCall(phoneNumber)
+                            }
+                        },
+                        modifier = Modifier.weight(1.3f).height(64.dp),
+                        enabled = !isRecordingLoading,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    ) {
+                        Icon(Icons.Rounded.Mic, contentDescription = "Record and call")
+                        Spacer(Modifier.width(8.dp))
+                        Text("Record & Call", style = MaterialTheme.typography.titleMedium)
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Delete Button
+                    if (phoneNumber.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .combinedClickable(
+                                    onClick = { viewModel.deleteLastDigit() },
+                                    onLongClick = { viewModel.clear() }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.Backspace,
+                                contentDescription = "Delete digit",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.size(56.dp))
+                    }
+                }
+            }
+
+            if (isRecordingLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier.padding(32.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Black.copy(alpha = 0.8f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(color = Color(0xFF2E7D32))
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = "Twilio is merging the call...",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "You'll receive a call shortly",
+                                color = Color.Gray,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
         }
     }

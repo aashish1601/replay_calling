@@ -24,13 +24,13 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://your-railway-app.up.railway.app/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://replaycalling-production.up.railway.app/\"")
         }
         release {
             optimization {
                 enable = false
             }
-            buildConfigField("String", "API_BASE_URL", "\"https://your-railway-app.up.railway.app/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://replaycalling-production.up.railway.app/\"")
         }
     }
     compileOptions {
