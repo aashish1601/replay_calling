@@ -71,9 +71,14 @@ app.post('/calls/start', async (req, res) => {
  */
 app.post('/twiml/bridge', (req, res) => {
   const contactPhone = req.query.contactPhone;
-  const userPhone = req.query.userPhone;
+  let userPhone = req.query.userPhone;
 
-  console.log(`User answered. Generating TwiML to dial Contact (${contactPhone}) and record.`);
+  // Sometimes Express decodes '+' as a space if not perfectly encoded by the client, so we fix it:
+  if (userPhone && userPhone.startsWith(' ')) {
+    userPhone = '+' + userPhone.trim();
+  }
+
+  console.log(`User answered. Generating TwiML to dial Contact (${contactPhone}) with Caller ID (${userPhone}) and record.`);
 
   const VoiceResponse = twilio.twiml.VoiceResponse;
   const response = new VoiceResponse();
@@ -81,7 +86,7 @@ app.post('/twiml/bridge', (req, res) => {
   // Dial the contact and start recording as soon as they answer
   const dial = response.dial({
     record: 'record-from-answer',
-    callerId: twilioPhoneNumber // Reverted to Twilio number because personal number is unverified
+    callerId: userPhone || twilioPhoneNumber 
   });
   dial.number(contactPhone);
 
