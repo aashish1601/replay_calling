@@ -6,6 +6,7 @@ import com.memory.app.model.CallSession
 import com.memory.app.model.CallState
 import com.memory.app.network.ReplayApi
 import com.memory.app.network.StartRecordingRequest
+import com.memory.app.network.TriggerBotRequest
 import com.memory.app.repository.ContactsRepository
 import com.memory.app.repository.SettingsRepository
 import com.memory.app.telecom.CallStateManager
@@ -163,16 +164,28 @@ class InCallViewModel @Inject constructor(
     }
 
     fun startRecording() {
-        val twilioPhone = settingsRepository.twilioPhone.value
-        if (twilioPhone.isBlank()) {
+        val userPhone = settingsRepository.userPhone.value
+        if (userPhone.isBlank()) {
             viewModelScope.launch {
-                _uiEvent.emit(InCallUiEvent.ShowToast("Please set the Twilio Bot Phone Number in Settings."))
+                _uiEvent.emit(InCallUiEvent.ShowToast("Please set your Phone Number in Settings."))
             }
             return
         }
+
         viewModelScope.launch {
-            _uiEvent.emit(InCallUiEvent.ShowToast("Calling Twilio... Tap 'Merge' when it answers."))
-            _uiEvent.emit(InCallUiEvent.LaunchTwilioCall(twilioPhone))
+            _uiEvent.emit(InCallUiEvent.ShowToast("Requesting recording... Wait for incoming call."))
+            try {
+                val request = TriggerBotRequest(userPhone = userPhone)
+                val response = replayApi.triggerBot(request)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    _uiEvent.emit(InCallUiEvent.ShowToast("Twilio is calling you now! Answer and Merge."))
+                } else {
+                    _uiEvent.emit(InCallUiEvent.ShowToast("Failed to request call from Twilio."))
+                }
+            } catch (e: Exception) {
+                _uiEvent.emit(InCallUiEvent.ShowToast("Error: ${e.message}"))
+            }
         }
     }
 

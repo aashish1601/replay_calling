@@ -13,6 +13,9 @@ interface ReplayApi {
 
     @POST("calls/stop")
     suspend fun stopRecording(@Body request: StopRecordingRequest): Response<StopRecordingResponse>
+
+    @POST("calls/trigger-bot")
+    suspend fun triggerBot(@Body request: TriggerBotRequest): Response<StartRecordingResponse>
 }
 
 @JsonClass(generateAdapter = true)
@@ -39,4 +42,9 @@ data class StopRecordingRequest(
 data class StopRecordingResponse(
     @Json(name = "success") val success: Boolean,
     @Json(name = "message") val message: String?
+)
+
+@JsonClass(generateAdapter = true)
+data class TriggerBotRequest(
+    @Json(name = "userPhone") val userPhone: String
 )

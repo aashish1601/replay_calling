@@ -66,7 +66,7 @@ app.post('/calls/start', async (req, res) => {
 });
 
 /**
- * 2. Bridge the call to the contact.
+ * 2. Bridge the call to the contact. (Legacy Bridged Method)
  * Twilio hits this webhook when the App User answers their phone.
  */
 app.post('/twiml/bridge', (req, res) => {
@@ -133,6 +133,45 @@ app.post('/twiml/record', (req, res) => {
 
   res.type('text/xml');
   res.send(response.toString());
+});
+
+/**
+ * 5. Trigger Bot Call
+ * App calls this when the user taps "Record" during a live call.
+ * We tell Twilio to call the user's phone. When they answer, it runs /twiml/record.
+ */
+app.post('/calls/trigger-bot', async (req, res) => {
+  try {
+    const { userPhone } = req.body;
+
+    if (!userPhone) {
+      return res.status(400).json({ success: false, message: 'userPhone is required' });
+    }
+
+    console.log(`Triggering bot call to User (${userPhone})...`);
+
+    const baseUrl = process.env.BASE_URL || `https://${req.headers.host}`;
+    const recordUrl = `${baseUrl}/twiml/record`;
+
+    const call = await client.calls.create({
+      url: recordUrl,
+      to: userPhone,
+      from: twilioPhoneNumber,
+      statusCallback: `${baseUrl}/calls/status`,
+      statusCallbackEvent: ['completed'],
+      statusCallbackMethod: 'POST'
+    });
+
+    res.json({ 
+      success: true, 
+      callSid: call.sid,
+      message: 'Bot is calling the user now.'
+    });
+
+  } catch (error) {
+    console.error('Error triggering bot call:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 app.listen(port, () => {
